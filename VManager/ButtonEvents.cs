@@ -1,5 +1,8 @@
-﻿using System.Reflection;
+﻿using System;
+using System.ComponentModel;
+using System.Reflection;
 using System.Windows;
+using System.Windows.Interop;
 using Microsoft.Win32;
 
 namespace VManager
@@ -8,12 +11,17 @@ namespace VManager
     {
         private void GeoIpDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
-            DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton);
+            DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton, true);
         }
 
         private void GeoSiteDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
-            DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton);
+            DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton, true);
+        }
+        
+        private void V2rayDownloadButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            DownloadV2ray(settings.UrlOfV2ray, V2rayDownloadBar, V2rayLabel, V2rayDownloadButton, true);
         }
         
         private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
@@ -38,6 +46,46 @@ namespace VManager
             {
                 AutoStartCheckBox.IsChecked = true;
             }
+        }
+        
+        private void RestartServiceButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            V2RayHelper.ClearInstances();
+            StartV2rayInstance();
+        }
+
+        private void MainWindow_OnClosing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
+        }
+        
+        private IntPtr GetMainWindowHandle()
+        {
+            var window = Application.Current.MainWindow;
+            if (window != null)
+            {
+                return new WindowInteropHelper(window).Handle;
+            }
+            return IntPtr.Zero;
+        }
+        
+        private new void Hide()
+        {
+            if (WindowState != WindowState.Minimized)
+            {
+                WindowState = WindowState.Minimized;
+            }
+            NativeHelper.ShowWindow(GetMainWindowHandle(), ShowWindowOption.SW_HIDE);
+        }
+
+        private new void Show()
+        {
+            if (WindowState != WindowState.Normal)
+            {
+                WindowState = WindowState.Normal;
+            }
+            NativeHelper.ShowWindow(GetMainWindowHandle(), ShowWindowOption.SW_SHOW);
         }
     }
 }

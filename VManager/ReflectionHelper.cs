@@ -20,5 +20,19 @@ namespace VManager
             
             return Path.Combine(directory, filename);
         }
+
+        public static void SetWorkingDirectoy()
+        {
+            string location = Assembly.GetExecutingAssembly().Location;
+            
+            if (string.IsNullOrWhiteSpace(location))
+                throw new Exception();
+
+            var directory = Path.GetDirectoryName(location);
+            if (string.IsNullOrWhiteSpace(directory))
+                throw new Exception();
+            
+            Directory.SetCurrentDirectory(directory);
+        }
     }
 }
