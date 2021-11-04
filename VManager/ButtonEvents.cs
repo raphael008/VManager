@@ -50,6 +50,7 @@ namespace VManager
         
         private void RestartServiceButton_OnClick(object sender, RoutedEventArgs e)
         {
+            OutputTextBox.Clear();
             V2RayHelper.ClearInstances();
             StartV2rayInstance();
         }
@@ -76,6 +77,8 @@ namespace VManager
             {
                 WindowState = WindowState.Minimized;
             }
+
+            ShowInTaskbar = false;
             NativeHelper.ShowWindow(GetMainWindowHandle(), ShowWindowOption.SW_HIDE);
         }
 
@@ -85,7 +88,17 @@ namespace VManager
             {
                 WindowState = WindowState.Normal;
             }
+
+            ShowInTaskbar = true;
             NativeHelper.ShowWindow(GetMainWindowHandle(), ShowWindowOption.SW_SHOW);
+        }
+
+        private void MainWindow_OnStateChanged(object sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                Hide();
+            }
         }
     }
 }

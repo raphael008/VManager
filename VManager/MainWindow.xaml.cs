@@ -5,6 +5,9 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using Newtonsoft.Json;
@@ -38,14 +41,12 @@ namespace VManager
             }
 
             InitializeTrayIcon();
-
             CheckAutoStartStatus();
-
             StartV2rayInstance();
-
-            DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton, false);
-            DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton, false);
-            DownloadV2ray(settings.UrlOfV2ray, V2rayDownloadBar, V2rayLabel, V2rayDownloadButton, false);
+            
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Download;
+            worker.RunWorkerAsync();
         }
 
         private void InitializeTrayIcon()
@@ -58,6 +59,7 @@ namespace VManager
             ContextMenu menu = new ContextMenu(menuItems);
 
             icon = new NotifyIcon();
+            icon.Icon = System.Drawing.Icon.ExtractAssociatedIcon("icon.ico");
             icon.Icon = new Icon("icon.ico");
             icon.ContextMenu = menu;
             icon.Visible = true;
@@ -65,7 +67,7 @@ namespace VManager
             {
                 Show();
                 Activate();
-            }; 
+            };
         }
 
         private void StartV2rayInstance()
@@ -74,17 +76,16 @@ namespace VManager
 
             instance.OutputDataReceived += (sender, args) =>
             {
-                if (OutputTextBox.Dispatcher.CheckAccess())
-                {
-                    OutputTextBox.Text += $"{args.Data} \r\n";
-                }
-                else
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
                     OutputTextBox.Dispatcher.BeginInvoke(new Action(() =>
                     {
+                        if (OutputTextBox.LineCount > 50)
+                            OutputTextBox.Clear();
+                        
                         OutputTextBox.Text += $"{args.Data} \r\n";
                     }));
-                }
+                }));
             };
             instance.Start();
             instance.BeginOutputReadLine();
@@ -92,10 +93,14 @@ namespace VManager
 
         private void DownloadGeoFiles(string url, ProgressBar progressBar, Label label, Button button, bool isForced)
         {
-            label.Visibility = Visibility.Hidden;
-            progressBar.Visibility = Visibility.Visible;
-            progressBar.Value = 0;
-            button.IsEnabled = false;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                label.Visibility = Visibility.Hidden;
+                progressBar.Visibility = Visibility.Visible;
+                progressBar.Value = 0;
+                button.IsEnabled = false;
+            }));
+
 
             var fileName = Path.GetFileName(url);
             if (File.Exists(fileName) && !isForced)
@@ -103,10 +108,13 @@ namespace VManager
                 DateTime lastWriteTime = File.GetLastWriteTime(fileName);
                 if (lastWriteTime.Day == DateTime.Today.Day)
                 {
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
-                    label.Content = lastWriteTime.ToString("yyyy-MM-dd");
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                        label.Content = lastWriteTime.ToString("yyyy-MM-dd");
+                    }));
 
                     return;
                 }
@@ -118,12 +126,14 @@ namespace VManager
                 client.DownloadProgressChanged += (sender, args) => { progressBar.Value = args.ProgressPercentage; };
                 client.DownloadFileCompleted += (sender, args) =>
                 {
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
-
                     DateTime creationTime = File.GetLastWriteTime(fileName);
-                    label.Content = creationTime.ToString("yyyy-MM-dd");
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                        label.Content = creationTime.ToString("yyyy-MM-dd");
+                    }));
                 };
 
                 try
@@ -133,21 +143,27 @@ namespace VManager
                 catch (Exception e)
                 {
                     MessageBox.Show(e.ToString());
-                    label.Content = "download failed";
 
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Content = "download failed";
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                    }));
                 }
             }
         }
-        
+
         private void DownloadV2ray(string url, ProgressBar progressBar, Label label, Button button, bool isForced)
         {
-            label.Visibility = Visibility.Hidden;
-            progressBar.Visibility = Visibility.Visible;
-            progressBar.Value = 0;
-            button.IsEnabled = false;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                label.Visibility = Visibility.Hidden;
+                progressBar.Visibility = Visibility.Visible;
+                progressBar.Value = 0;
+                button.IsEnabled = false;
+            }));
 
             var fileName = Path.GetFileName(url);
             if (File.Exists(fileName) && !isForced)
@@ -155,10 +171,14 @@ namespace VManager
                 DateTime lastWriteTime = File.GetLastWriteTime(fileName);
                 if (lastWriteTime.Day == DateTime.Today.Day)
                 {
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
-                    label.Content = lastWriteTime.ToString("yyyy-MM-dd");
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                        label.Content = lastWriteTime.ToString("yyyy-MM-dd");
+                    }));
+
 
                     return;
                 }
@@ -170,12 +190,15 @@ namespace VManager
                 client.DownloadProgressChanged += (sender, args) => { progressBar.Value = args.ProgressPercentage; };
                 client.DownloadFileCompleted += (sender, args) =>
                 {
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
-
                     DateTime creationTime = File.GetLastWriteTime(fileName);
-                    label.Content = creationTime.ToString("yyyy-MM-dd");
+
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                        label.Content = creationTime.ToString("yyyy-MM-dd");
+                    }));
                 };
                 client.DownloadFileCompleted += V2rayDownloadCompleted;
 
@@ -186,11 +209,14 @@ namespace VManager
                 catch (Exception e)
                 {
                     MessageBox.Show(e.ToString());
-                    label.Content = "download failed";
-
-                    label.Visibility = Visibility.Visible;
-                    progressBar.Visibility = Visibility.Hidden;
-                    button.IsEnabled = true;
+                    
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        label.Content = "download failed";
+                        label.Visibility = Visibility.Visible;
+                        progressBar.Visibility = Visibility.Hidden;
+                        button.IsEnabled = true;
+                    }));
                 }
             }
         }
@@ -198,21 +224,21 @@ namespace VManager
         private void V2rayDownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             V2RayHelper.ClearInstances();
-            
+
             string fileName = "v2ray-windows-64.zip";
             var randomDirectory = Path.GetRandomFileName();
             while (Directory.Exists(randomDirectory))
             {
                 randomDirectory = Path.GetRandomFileName();
             }
-            
+
             Directory.CreateDirectory(randomDirectory);
-            
+
             ZipFile.ExtractToDirectory(fileName, randomDirectory);
 
             string sourceBinary = Path.Combine(randomDirectory, "v2ray.exe");
             string targetBinary = "v2ray.exe";
-            
+
             if (File.Exists(targetBinary))
             {
                 File.Replace(sourceBinary, targetBinary, null);
@@ -221,16 +247,74 @@ namespace VManager
             {
                 File.Move(sourceBinary, targetBinary);
             }
-            
+
             Directory.Delete(randomDirectory, true);
-            
+
             StartV2rayInstance();
         }
-        
+
         private void MainWindow_OnClosed(object sender, EventArgs e)
         {
             icon.Dispose();
             V2RayHelper.ClearInstances();
+        }
+
+        private void TestNetwork()
+        {
+            var httpClientHandler = new HttpClientHandler();
+            httpClientHandler.Proxy = new WebProxy(settings.ProxyHost, settings.ProxyPort);
+
+            var httpClient = new HttpClient(httpClientHandler);
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+
+            int testCount = 0;
+            while (true)
+            {
+                if (testCount >= 5)
+                {
+                    throw new Exception("Network is unavailable.");
+                }
+
+                Task<HttpResponseMessage> result = httpClient.GetAsync("https://www.google.com/");
+                result.Wait();
+
+                if (result.Result.IsSuccessStatusCode)
+                {
+                    break;
+                }
+
+                testCount++;
+                Thread.Sleep(3000);
+            }
+        }
+
+        private void Download(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                TestNetwork();
+                
+                DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton, false);
+                DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton, false);
+                DownloadV2ray(settings.UrlOfV2ray, V2rayDownloadBar, V2rayLabel, V2rayDownloadButton, false);
+            }
+            catch (Exception exception)
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    GeoIpDownloadBar.Visibility = Visibility.Collapsed;
+                    GeoSiteDownloadBar.Visibility = Visibility.Collapsed;
+                    V2rayDownloadBar.Visibility = Visibility.Collapsed;
+
+                    GeoIpLabel.Visibility = Visibility.Visible;
+                    GeoSiteLabel.Visibility = Visibility.Visible;
+                    V2rayLabel.Visibility = Visibility.Visible;
+
+                    GeoIpLabel.Content = "Network is unavailable";
+                    GeoSiteLabel.Content = "Network is unavailable";
+                    V2rayLabel.Content = "Network is unavailable";
+                }));
+            }
         }
     }
 }
