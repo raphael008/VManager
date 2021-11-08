@@ -68,11 +68,15 @@
             <Generator>MSBuild:Compile</Generator>
             <SubType>Designer</SubType>
         </ApplicationDefinition>
-        <Compile Include="ButtonEvents.cs" />
+        <Compile Include="Constants\FileConstants.cs" />
+        <Compile Include="Events\ButtonEvents.cs" />
+        <Compile Include="Events\DownloadEvents.cs" />
+        <Compile Include="Helpers\ControlHelper.cs" />
+        <Compile Include="Helpers\FileHelper.cs" />
+        <Compile Include="Helpers\V2RayHelper.cs" />
         <Compile Include="NativeHelper.cs" />
         <Compile Include="ReflectionHelper.cs" />
         <Compile Include="Settings.cs" />
-        <Compile Include="V2RayHelper.cs" />
         <Page Include="MainWindow.xaml">
             <Generator>MSBuild:Compile</Generator>
             <SubType>Designer</SubType>

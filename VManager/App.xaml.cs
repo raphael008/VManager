@@ -24,16 +24,14 @@ namespace VManager
                 Current.Shutdown();
             }
 
-            Current.DispatcherUnhandledException += DispatcherUnhandledExceptionHandler;
+            AppDomain.CurrentDomain.UnhandledException += DispatcherUnhandledExceptionHandler;
             
             base.OnStartup(e);
         }
         
-        private void DispatcherUnhandledExceptionHandler(object sender, DispatcherUnhandledExceptionEventArgs args)
+        private void DispatcherUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            args.Handled = true;
-
-            MessageBox.Show(args.Exception.ToString());
+            MessageBox.Show(e.ExceptionObject.ToString());
             
             Current.Shutdown();
         }

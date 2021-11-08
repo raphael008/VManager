@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
 using Microsoft.Win32;
+using VManager.Constants;
 
 namespace VManager
 {
@@ -11,17 +12,20 @@ namespace VManager
     {
         private void GeoIpDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
-            DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton, true);
+            GeoIpDownloadButton.IsEnabled = false;
+            DownloadFile(settings.UrlOfGeoIp, FileConstants.GeoIp, GeoIpProgressChanged, GeoIpDownloadCompleted);
         }
 
         private void GeoSiteDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
-            DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton, true);
+            GeoSiteDownloadButton.IsEnabled = false;
+            DownloadFile(settings.UrlOfGeoSite, FileConstants.GeoSite, GeoSiteProgressChanged, GeoSiteDownloadCompleted);
         }
         
         private void V2rayDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
-            DownloadV2ray(settings.UrlOfV2ray, V2rayDownloadBar, V2rayLabel, V2rayDownloadButton, true);
+            V2rayDownloadButton.IsEnabled = false;
+            DownloadFile(settings.UrlOfV2ray, FileConstants.V2Ray, V2RayProgressChanged, V2RayDownloadCompleted);
         }
         
         private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
@@ -52,7 +56,7 @@ namespace VManager
         {
             OutputTextBox.Clear();
             V2RayHelper.ClearInstances();
-            StartV2rayInstance();
+            V2RayHelper.StartInstance(settings.V2rayPath, OutputTextBox);
         }
 
         private void MainWindow_OnClosing(object sender, CancelEventArgs e)

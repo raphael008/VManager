@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Controls;
 
 namespace VManager
 {
@@ -28,6 +29,33 @@ namespace VManager
             processes.Add(process);
             
             return process;
+        }
+
+        public static void StartInstance(string v2rayPath, TextBox outputTextBox)
+        {
+            Process instance = GetInstance(v2rayPath);
+            instance.OutputDataReceived += (sender, args) =>
+            {
+                if (outputTextBox.Dispatcher.CheckAccess())
+                {
+                    if (outputTextBox.LineCount > 100)
+                        outputTextBox.Clear();
+                    
+                    outputTextBox.Text += $"{args.Data} \r\n";
+                }
+                else
+                {
+                    outputTextBox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (outputTextBox.LineCount > 100)
+                            outputTextBox.Clear();
+                    
+                        outputTextBox.Text += $"{args.Data} \r\n";
+                    }));
+                }
+            };
+            instance.Start();
+            instance.BeginOutputReadLine();
         }
 
         public static void ClearInstances()
