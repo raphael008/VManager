@@ -27,6 +27,8 @@ namespace VManager
         private static Settings settings;
         private static NotifyIcon icon;
 
+        private ManualResetEvent signal = new ManualResetEvent(false);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -43,10 +45,10 @@ namespace VManager
             InitializeTrayIcon();
             CheckAutoStartStatus();
             StartV2rayInstance();
+
+            Task.Run(TestNetwork);
             
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Download;
-            worker.RunWorkerAsync();
+            Task.Run(Download);
         }
 
         private void InitializeTrayIcon()
@@ -101,11 +103,12 @@ namespace VManager
                 button.IsEnabled = false;
             }));
 
-
-            var fileName = Path.GetFileName(url);
-            if (File.Exists(fileName) && !isForced)
+            var sourceFile = Path.GetFileName(url);
+            var targetFile = $"{sourceFile}.temp";
+            var backupFile = $"{sourceFile}.bak";
+            if (File.Exists(targetFile) && !isForced)
             {
-                DateTime lastWriteTime = File.GetLastWriteTime(fileName);
+                DateTime lastWriteTime = File.GetLastWriteTime(targetFile);
                 if (lastWriteTime.Day == DateTime.Today.Day)
                 {
                     Dispatcher.BeginInvoke(new Action(() =>
@@ -123,10 +126,20 @@ namespace VManager
             using (WebClient client = new WebClient())
             {
                 client.Proxy = new WebProxy(settings.ProxyHost, settings.ProxyPort);
-                client.DownloadProgressChanged += (sender, args) => { progressBar.Value = args.ProgressPercentage; };
+                client.DownloadProgressChanged += (sender, args) =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            progressBar.Value = args.ProgressPercentage;
+                        }
+                    ));
+                };
                 client.DownloadFileCompleted += (sender, args) =>
                 {
-                    DateTime creationTime = File.GetLastWriteTime(fileName);
+                    if (!File.Exists(targetFile))
+                        return;
+
+                    DateTime creationTime = File.GetLastWriteTime(targetFile);
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         label.Visibility = Visibility.Visible;
@@ -134,11 +147,18 @@ namespace VManager
                         button.IsEnabled = true;
                         label.Content = creationTime.ToString("yyyy-MM-dd");
                     }));
+                    
+                    if (File.Exists(backupFile))
+                        File.Delete(backupFile);
+                    
+                    File.Move(sourceFile, backupFile);
+                    
+                    File.Move(targetFile, sourceFile);
                 };
 
                 try
                 {
-                    client.DownloadFileAsync(new Uri(url), fileName);
+                    client.DownloadFileAsync(new Uri(url), targetFile);
                 }
                 catch (Exception e)
                 {
@@ -187,7 +207,15 @@ namespace VManager
             using (WebClient client = new WebClient())
             {
                 client.Proxy = new WebProxy(settings.ProxyHost, settings.ProxyPort);
-                client.DownloadProgressChanged += (sender, args) => { progressBar.Value = args.ProgressPercentage; };
+                
+                client.DownloadProgressChanged += (sender, args) =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        progressBar.Value = args.ProgressPercentage;
+                    }));
+                };
+                
                 client.DownloadFileCompleted += (sender, args) =>
                 {
                     DateTime creationTime = File.GetLastWriteTime(fileName);
@@ -286,14 +314,15 @@ namespace VManager
                 testCount++;
                 Thread.Sleep(3000);
             }
+
+            signal.Set();
         }
 
-        private void Download(object sender, DoWorkEventArgs e)
+        private void Download()
         {
             try
             {
-                TestNetwork();
-                
+                signal.WaitOne();
                 DownloadGeoFiles(settings.UrlOfGeoIp, GeoIpDownloadBar, GeoIpLabel, GeoIpDownloadButton, false);
                 DownloadGeoFiles(settings.UrlOfGeoSite, GeoSiteDownloadBar, GeoSiteLabel, GeoSiteDownloadButton, false);
                 DownloadV2ray(settings.UrlOfV2ray, V2rayDownloadBar, V2rayLabel, V2rayDownloadButton, false);

@@ -1,5 +1,7 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace VManager
 {
@@ -21,8 +23,19 @@ namespace VManager
             {
                 Current.Shutdown();
             }
+
+            Current.DispatcherUnhandledException += DispatcherUnhandledExceptionHandler;
             
             base.OnStartup(e);
+        }
+        
+        private void DispatcherUnhandledExceptionHandler(object sender, DispatcherUnhandledExceptionEventArgs args)
+        {
+            args.Handled = true;
+
+            MessageBox.Show(args.Exception.ToString());
+            
+            Current.Shutdown();
         }
     }
 }
