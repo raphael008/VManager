@@ -28,6 +28,7 @@ namespace VManager
         private void GeoIpDownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             ControlHelper.EnableButton(GeoIpDownloadButton);
+            SetLabelContent(GeoIpLabel, GeoIpDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
             
             if (!File.Exists(FileConstants.GeoIpTemp))
                 return;
@@ -36,13 +37,12 @@ namespace VManager
                 File.Move(FileConstants.GeoIpTemp, FileConstants.GeoIp);
             else
                 File.Replace(FileConstants.GeoIpTemp, FileConstants.GeoIp, FileConstants.GeoIpBackup);
-            
-            SetLabelContent(GeoIpLabel, GeoIpDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
         }
         
         private void GeoSiteDownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             ControlHelper.EnableButton(GeoSiteDownloadButton);
+            SetLabelContent(GeoSiteLabel, GeoSiteDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
             
             if (!File.Exists(FileConstants.GeoSiteTemp))
                 return;
@@ -51,13 +51,12 @@ namespace VManager
                 File.Move(FileConstants.GeoSiteTemp, FileConstants.GeoSite);
             else
                 File.Replace(FileConstants.GeoSiteTemp, FileConstants.GeoSite, FileConstants.GeoSiteBackup);
-            
-            SetLabelContent(GeoSiteLabel, GeoSiteDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
         }
         
         private void V2RayDownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             ControlHelper.EnableButton(V2rayDownloadButton);
+            SetLabelContent(V2rayLabel, V2rayDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
             
             V2RayHelper.ClearInstances();
             
@@ -81,8 +80,6 @@ namespace VManager
             Directory.Delete(randomDirectory, true);
             
             V2RayHelper.StartInstance(settings.V2rayPath, OutputTextBox);
-            
-            SetLabelContent(V2rayLabel, V2rayDownloadBar, DateTime.Today.ToString("yyyy-MM-dd"));
         }
 
         private void SafeChangeProgressBarValue(ProgressBar progressBar, int value)

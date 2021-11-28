@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
@@ -13,18 +15,33 @@ namespace VManager
         private void GeoIpDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
             GeoIpDownloadButton.IsEnabled = false;
+            GeoIpLabel.Visibility = Visibility.Collapsed;
+            
+            GeoIpDownloadBar.Value = 0;
+            GeoIpDownloadBar.Visibility = Visibility.Visible;
+            
             DownloadFile(settings.UrlOfGeoIp, FileConstants.GeoIp, GeoIpProgressChanged, GeoIpDownloadCompleted);
         }
 
         private void GeoSiteDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
             GeoSiteDownloadButton.IsEnabled = false;
+            GeoSiteLabel.Visibility = Visibility.Collapsed;
+
+            GeoSiteDownloadBar.Value = 0;
+            GeoSiteDownloadBar.Visibility = Visibility.Visible;
+            
             DownloadFile(settings.UrlOfGeoSite, FileConstants.GeoSite, GeoSiteProgressChanged, GeoSiteDownloadCompleted);
         }
         
         private void V2rayDownloadButton_OnClick(object sender, RoutedEventArgs e)
         {
             V2rayDownloadButton.IsEnabled = false;
+            V2rayLabel.Visibility = Visibility.Collapsed;
+            
+            V2rayDownloadBar.Value = 0;
+            V2rayDownloadBar.Visibility = Visibility.Visible;
+            
             DownloadFile(settings.UrlOfV2ray, FileConstants.V2Ray, V2RayProgressChanged, V2RayDownloadCompleted);
         }
         
@@ -57,6 +74,11 @@ namespace VManager
             OutputTextBox.Clear();
             V2RayHelper.ClearInstances();
             V2RayHelper.StartInstance(settings.V2rayPath, OutputTextBox);
+        }
+        
+        private void SelfPathButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start(Directory.GetCurrentDirectory());
         }
 
         private void MainWindow_OnClosing(object sender, CancelEventArgs e)
